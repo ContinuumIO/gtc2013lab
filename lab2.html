@@ -1,0 +1,188 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title></title>
+  <style type="text/css">
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; }
+code > span.dt { color: #902000; }
+code > span.dv { color: #40a070; }
+code > span.bn { color: #40a070; }
+code > span.fl { color: #40a070; }
+code > span.ch { color: #4070a0; }
+code > span.st { color: #4070a0; }
+code > span.co { color: #60a0b0; font-style: italic; }
+code > span.ot { color: #007020; }
+code > span.al { color: #ff0000; font-weight: bold; }
+code > span.fu { color: #06287e; }
+code > span.er { color: #ff0000; font-weight: bold; }
+  </style>
+</head>
+<body>
+<h1 id="lab-2-a-monty-carlo-option-pricer">Lab 2: A &quot;Monty&quot; Carlo Option Pricer</h1>
+<h2 id="objective">Objective</h2>
+<ul>
+<li>Implement a monte carlo pricer using the CU API</li>
+</ul>
+<h2 id="quick-lesson-on-numbapro-cu-api">Quick Lesson on NumbaPro CU API</h2>
+<ul>
+<li>CU = Compute Unit</li>
+<li>A OpenCL-like API to heterogeneous parallel computing</li>
+<li>Instantiate a CU for 'gpu' or 'cpu'
+<ul>
+<li><code>cu = CU('gpu')</code></li>
+</ul></li>
+<li>Transfer data to the CU
+<ul>
+<li>read only
+<ul>
+<li><code>d_ary = cu.input(ary)</code></li>
+</ul></li>
+<li>write only
+<ul>
+<li><code>d_ary = cu.output(ary)</code></li>
+</ul></li>
+<li>read+write
+<ul>
+<li><code>d_ary = cu.inout(ary)</code></li>
+</ul></li>
+<li>scratchpad
+<ul>
+<li><code>d_ary = cu.scratch(shape=arraylen, dtype=np.float32)</code></li>
+<li><code>d_ary = cu.scratch_like(ary)</code></li>
+</ul></li>
+</ul></li>
+<li>Enqueue kernels to the CU
+<ul>
+<li><code>cu.enqueue(kernel, ntid=number_of_threads, args=(arg0, arg1))</code></li>
+</ul></li>
+<li>The kernel runs asynchronously</li>
+<li>Wait for the kernel to complete
+<ul>
+<li><code>cu.wait()</code></li>
+</ul></li>
+</ul>
+<h2 id="a-numpy-implementation">A Numpy Implementation</h2>
+<pre class="sourceCode python"><code class="sourceCode python"><span class="ch">import</span> numpy <span class="ch">as</span> np
+<span class="ch">from</span> math <span class="ch">import</span> sqrt, exp
+<span class="ch">from</span> timeit <span class="ch">import</span> default_timer <span class="ch">as</span> timer
+
+<span class="kw">def</span> step(dt, prices, c0, c1, noises):
+    <span class="kw">return</span> prices * np.exp(c0 * dt + c1 * noises)
+
+<span class="kw">def</span> monte_carlo_pricer(paths, dt, interest, volatility):
+    c0 = interest - <span class="fl">0.5</span> * volatility ** <span class="dv">2</span>
+    c1 = volatility * np.sqrt(dt)
+
+    <span class="kw">for</span> j in <span class="dt">xrange</span>(<span class="dv">1</span>, paths.shape[<span class="dv">1</span>]):
+        prices = paths[:, j - <span class="dv">1</span>]
+        noises = np.random.normal(<span class="dv">0</span>., <span class="dv">1</span>., prices.size)
+        paths[:, j] = step(dt, prices, c0, c1, noises)
+
+<span class="kw">if</span> <span class="dt">__name__</span> == <span class="st">'__main__'</span>:
+    <span class="ch">from</span> driver <span class="ch">import</span> driver
+    driver(monte_carlo_pricer)</code></pre>
+<h2 id="the-exercise">The Exercise</h2>
+<pre class="sourceCode python"><code class="sourceCode python"><span class="co">'''</span>
+<span class="co">Implementation of the Monte Carlo pricer using numbapro.CU with GPU target</span>
+<span class="co">'''</span>
+<span class="ch">from</span> contextlib <span class="ch">import</span> closing
+<span class="ch">import</span> numpy <span class="ch">as</span> np
+<span class="ch">from</span> numbapro <span class="ch">import</span> CU
+<span class="ch">from</span> numbapro.parallel.kernel <span class="ch">import</span> builtins
+
+<span class="kw">def</span> step(tid, paths, dt, prices, c0, c1, noises):
+    <span class="co">&quot;&quot;&quot;</span>
+<span class="co">    paths  --- output array for the next prices</span>
+<span class="co">    dt     --- the discrete time step</span>
+<span class="co">    prices --- array of previous prices</span>
+<span class="co">    c0     --- scalar constant for the math</span>
+<span class="co">    c1     --- scalar constant for the math</span>
+<span class="co">    noises --- input array of random noises</span>
+<span class="co">    &quot;&quot;&quot;</span>
+    <span class="co"># -------- Exercise --------</span>
+    <span class="co"># Complete this kernel.</span>
+    <span class="co"># Since a kernel does not return any value,</span>
+    <span class="co"># the output must be stored in the &quot;paths&quot; array.</span>
+    <span class="co"># The thread ID is passed in as &quot;tid&quot;.</span>
+    <span class="co"># Hints: only &quot;paths&quot;, &quot;prices&quot;, &quot;noises&quot; are arrays; others are scalar.</span>
+    
+
+<span class="kw">def</span> monte_carlo_pricer(paths, dt, interest, volatility):
+    n = paths.shape[<span class="dv">0</span>]
+    cu = CU(<span class="st">'gpu'</span>)
+    
+    <span class="kw">with</span> closing(cu): <span class="co"># &lt;--- auto closing the cu</span>
+        <span class="co"># seed the cuRAND RNG</span>
+        cu.configure(builtins.random.seed, <span class="dv">1234</span>)
+
+        c0 = interest - <span class="fl">0.5</span> * volatility ** <span class="dv">2</span>
+        c1 = volatility * np.sqrt(dt)
+        
+        <span class="co"># Step 1. prepare data</span>
+
+        <span class="co"># -------- Exercise --------</span>
+        <span class="co"># allocate scratchpad memory on the device for noises</span>
+        d_noises = <span class="co"># fill in the RHS</span>
+
+        <span class="co"># allocate a in-out memory on the device for the initial prices</span>
+        <span class="co"># &quot;paths&quot; is a 2-D array with the 1st dimension as number of paths</span>
+        <span class="co"># the 2nd dimension as the number of time step.</span>
+        d_last_paths = cu.inout(paths[:, <span class="dv">0</span>])
+
+        <span class="co"># -- Step 2. simulation loop --</span>
+        <span class="co"># compute one step for all paths in each iteration</span>
+        <span class="kw">for</span> i in <span class="dt">range</span>(<span class="dv">1</span>, paths.shape[<span class="dv">1</span>]):
+            <span class="co"># Allocate a in-out memory for the next batch of simulated prices</span>
+            d_paths = cu.inout(paths[:, i])
+
+            <span class="co"># Use builtin kernel &quot;builtins.random.normal&quot;</span>
+            <span class="co"># to generate a sequence of normal distribution.</span>
+            cu.enqueue(builtins.random.normal,      <span class="co"># the kernel</span>
+                       ntid=n,                      <span class="co"># number of threads</span>
+                       args=(d_noises,))            <span class="co"># arguments</span>
+
+            <span class="co"># -------- Exercise --------</span>
+            <span class="co"># Enqueue the &quot;step&quot; kernel</span>
+            <span class="co"># Hints: The &quot;tid&quot; argument is automatically inserted.</span>
+            
+
+            <span class="co"># prepare for next step</span>
+            d_last_paths = d_paths
+
+        <span class="co"># wait the the task to complete</span>
+        cu.wait()
+
+<span class="kw">if</span> <span class="dt">__name__</span> == <span class="st">'__main__'</span>:
+    <span class="ch">from</span> driver <span class="ch">import</span> driver
+    driver(monte_carlo_pricer)</code></pre>
+<h2 id="expected-result">Expected Result</h2>
+<p>The result should be close to the following numbers:</p>
+<pre><code>StockPrice 22.6403957688
+StandardError 0.000434370525451
+PaidOff 1.14039936311
+OptionPrice 1.04921806448</code></pre>
+<h2 id="performance">Performance</h2>
+<p>Numpy implementation</p>
+<ul>
+<li>19.74 MStep per second</li>
+</ul>
+<p>NumbaPro CU + GeForce GT 650M</p>
+<ul>
+<li>101.78 MStep per second</li>
+<li><strong>5x</strong> speedup</li>
+</ul>
+<p>NumbaPro CU + Tesla C2075</p>
+<ul>
+<li>188.84 MStep per second</li>
+<li><strong>9.5x</strong> speedup</li>
+</ul>
+</body>
+</html>

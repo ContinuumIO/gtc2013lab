@@ -15,6 +15,8 @@
     - `d_ary = cu.scratch(shape=arraylen, dtype=np.float32)`
     - `d_ary = cu.scratch_like(ary)`
 
+# Continue...
+
 * Enqueue kernels to the CU
     - `cu.enqueue(kernel, ntid=number_of_threads, args=(arg0, arg1))`
 * The kernel runs asynchronously

@@ -6,7 +6,7 @@ TARGET = labslides.pdf lab1.html lab1.pdf lab2.html lab2.pdf
 
 all: $(TARGET)
 
-labslides.pdf: labslides.md labslides-lab1.md labslides-lab2.md
+labslides.pdf: labslides.md cuda_c.md labslides-lab1.md labslides-lab2.md
 	$(MAKEPDF) -t beamer $+ -o $@
 
 lab1.html: lab1.md

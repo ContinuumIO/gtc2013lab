@@ -21,7 +21,6 @@
 # Kernel launch
 
 * `a_kernel[griddim, blockddim](arg0, arg1)`
-* similar to C: `a_kernel<<<griddim, blockdim>>>(arg0, arg1)`
 * `griddim`: tuple of 1-2 ints
 * `blockdim`: tuple of 1-3 ints
 

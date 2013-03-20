@@ -27,93 +27,56 @@ code > span.er { color: #ff0000; font-weight: bold; }
 </head>
 <body>
 <h1 id="lab-1-saxpy-in-cuda-python">Lab 1: Saxpy in &quot;CUDA Python&quot;</h1>
-<h2 id="objective">Objective</h2>
 <ul>
 <li>Implement saxpy in &quot;CUDA Python&quot;</li>
+<li>The lab is broken down into four small exercises</li>
+<li>We will provide guidelines and hints along the way</li>
 </ul>
-<h2 id="quick-lesson-to-cuda-python">Quick Lesson to CUDA Python</h2>
+<h1 id="exercise-1">Exercise 1</h1>
+<h2 id="host---device">Host -&gt; Device</h2>
 <ul>
-<li>Similar to CUDA-C</li>
-<li><code>threadIdx</code>, <code>blockIdx</code>, <code>blockDim</code> -&gt; <code>cuda.threadIdx</code>, <code>cuda.blockIdx</code>, <code>cuda.blockDim</code>
+<li><code>d_ary = cuda.to_device(ary)</code>
 <ul>
-<li><code>i = cuda.threadIdx.x + cuda.blockIdx.x * cuda.blockDim.x</code></li>
+<li><code>cudaMalloc(size);</code></li>
+<li><code>cudaMemcpy(devary, hstary, size, cudaMemcpyHostToDevice);</code></li>
 </ul></li>
-<li>Host-&gt;Device
+</ul>
+<h2 id="host---device-allocate-only-no-copy">Host -&gt; Device (allocate only, no copy)</h2>
 <ul>
-<li><code>d_ary = cuda.to_device(ary)</code></li>
+<li><code>d_ary = cuda.to_device(ary, copy=False)</code>
+<ul>
+<li><code>cudaMalloc(size);</code></li>
 </ul></li>
-<li>Host-&gt;Device (allocate only, no copy)
+</ul>
+<h1 id="exercise-2">Exercise 2</h1>
+<h2 id="kernel-launch">Kernel Launch</h2>
 <ul>
-<li><code>d_ary = cuda.to_device(ary, copy=False)</code></li>
-</ul></li>
-<li>Device-&gt;Host
-<ul>
-<li><code>d_ary.to_host()</code></li>
-</ul></li>
-<li>Decorate kernel
-<ul>
-<li><code>cuda.autojit</code>, <code>cuda.jit</code></li>
-</ul></li>
-<li>Kernel launch
-<ul>
-<li><code>a_kernel[griddim, blockddim](arg0, arg1)</code></li>
-<li>similar to C: <code>a_kernel&lt;&lt;&lt;griddim, blockdim&gt;&gt;&gt;(arg0, arg1)</code></li>
 <li><code>griddim</code>: tuple of 1-2 ints</li>
-<li><code>blockdim</code>: tuple of 1-3 ints</li>
+<li><code>blockdim</code>: tuple of 1-3 ints
+<ul>
+<li>`dim3 griddim, blockdim;</li>
+</ul></li>
+<li><code>a_kernel[griddim, blockddim](arg0, arg1)</code>
+<ul>
+<li><code>a_kernel&lt;&lt;&lt;griddim, blockdim&gt;&gt;&gt;(arg0, arg1);</code></li>
 </ul></li>
 </ul>
-<h2 id="exercise-10-mins">Exercise (10 mins)</h2>
-<pre class="sourceCode python"><code class="sourceCode python"><span class="ch">from</span> numbapro <span class="ch">import</span> cuda
-<span class="ch">from</span> numba <span class="ch">import</span> *
-<span class="ch">import</span> numpy <span class="ch">as</span> np
-<span class="ch">import</span> math
-<span class="ch">from</span> timeit <span class="ch">import</span> default_timer <span class="ch">as</span> time
-
-<span class="ot">@cuda.autojit</span>
-<span class="kw">def</span> saxpy(Out, X, Y, Z):
-    <span class="st">&quot;Compute Out = X * Y + Z&quot;</span>
-    <span class="co"># ------ Exercise --------</span>
-    <span class="co"># Complete this kernel</span>
-    <span class="co"># threadIdx ---&gt; cuda.threadIdx</span>
-    <span class="co"># blockIdx  ---&gt; cuda.blockIdx</span>
-    <span class="co"># blockDim  ---&gt; cuda.blockDim</span>
-
-
-<span class="kw">def</span> main():
-    <span class="co"># Prepare data</span>
-    thread_per_block = <span class="dv">512</span>
-    block_per_grid = <span class="dv">10</span>
-    n = thread_per_block * block_per_grid
-    X = np.random.random(n)
-    Y = np.random.random(n)
-    Z = np.random.random(n)
-    Out = np.empty_like(X)
-
-    <span class="co"># ------ Exercise --------</span>
-    <span class="co"># Host-&gt;Device</span>
-    <span class="co"># Complete the transfer for Y, Z, and Out</span>
-
-    <span class="co"># Kernel launch</span>
-    blockdim = thread_per_block, <span class="dv">1</span>, <span class="dv">1</span>
-    griddim = block_per_grid, <span class="dv">1</span>
-
-    
-    <span class="co"># ------ Exercise --------</span>
-    <span class="co"># Kernel launch</span>
-    <span class="co"># Complete the kernel launch for saxpy</span>
-
-
-    <span class="co"># ------ Exercise --------</span>
-    <span class="co"># Device-&gt;Host</span>
-    <span class="co"># Complete the transfer for dOut</span>
-
-
-    <span class="kw">print</span>(<span class="st">'-- Result --'</span>)
-    <span class="kw">print</span>(Out)
-    <span class="co"># Verify</span>
-    <span class="kw">print</span>(<span class="st">&quot;verify: </span><span class="ot">%s</span><span class="st">&quot;</span> % np.allclose(X * Y + Z, Out))
-
-<span class="kw">if</span> <span class="dt">__name__</span> == <span class="st">'__main__'</span>:
-    main()</code></pre>
+<h1 id="exercise-3">Exercise 3</h1>
+<h2 id="device---host">Device -&gt; Host</h2>
+<ul>
+<li><code>d_ary.to_host()</code>
+<ul>
+<li><code>cudaMemcpy(hstary, devary, size, cudaMemcpyHostToDevice);</code></li>
+</ul></li>
+</ul>
+<h1 id="exercise-4">Exercise 4</h1>
+<h2 id="inside-the-kernel">Inside the Kernel</h2>
+<ul>
+<li><code>cuda.threadIdx</code>, <code>cuda.blockIdx</code>, <code>cuda.blockDim</code>
+<ul>
+<li><code>threadIdx</code>, <code>blockIdx</code>, <code>blockDim</code></li>
+</ul></li>
+</ul>
+<pre class="sourceCode python"><code class="sourceCode python">i = cuda.threadIdx.x + cuda.blockIdx.x * cuda.blockDim.x</code></pre>
 </body>
 </html>

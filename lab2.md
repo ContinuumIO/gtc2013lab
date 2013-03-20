@@ -3,6 +3,7 @@
 
 * Implement a monte carlo pricer using the CU API
 * Guidelines and hints will be provided as we go
+* lab2/pricer_cu.py
 
 # Step 0
 

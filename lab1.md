@@ -3,7 +3,7 @@
 * Implement saxpy in "CUDA Python"
 * The lab is broken down into four small exercises
 * We will provide guidelines and hints along the way
-
+* lab1/saxpy.py
 
 # Exercise 1
 

@@ -25,21 +25,17 @@ Pros
 
 Cons
 
-* Global Interpretter Lock (GIL)
+* Hard to parallellize because of the GIL
 * Slow execution speed
 
-# Our Solution: Numba
+# Our Solution: Speedup Python with Numba
+
+## Numba
 
 * An opensource **JIT** compiler for **array-oriented programming** in CPython
 * Turn numerical loops into fast native code
 * Maximumize hardware utilization
 * Just add a decorator to your compute intensive function
-
-# Why Numba?
-
-* Works with existing CPython
-* Goal: Integration with scientific software stack
-    - Numpy/SciPy/Blaze
 
 # Mandelbrot in Numba
 
@@ -68,46 +64,18 @@ def mandel(x, y, max_iters):
 from numbapro import cuda, uint8, f8, uint32
 # use CUDA jit
 @cuda.jit(argtypes=[uint8[:,:], f8, f8, f8, f8, uint32])
-def mandel_kernel(image, min_x, max_x, min_y, max_y, iters):
+def mandel_kernel(image, min_x, max_x, 
+                  min_y, max_y, iters):
 	height = image.shape[0]
 	width = image.shape[1]
 	pixel_size_x = (max_x - min_x) / width
 	pixel_size_y = (max_y - min_y) / height
     # access thread indices
-	x = cuda.threadIdx.x + cuda.blockIdx.x * cuda.blockDim.x
-	y = cuda.threadIdx.y + cuda.blockIdx.y * cuda.blockDim.y
+	x = cuda.threadIdx.x + \    
+                cuda.blockIdx.x * cuda.blockDim.x
+	y = cuda.threadIdx.y + \        
+                cuda.blockIdx.y * cuda.blockDim.y
     # truncated ...
 ```
 
 * **1255x** faster on K20
-
-
-# NumbaPro CU API
-
-* Compute Unit (CU) API
-* Similar to OpenCL
-* Portable parallel programming for GPU, CPU
-* Execute kernels asynchronously
-
-
-# A Saxpy Example
-
-```python
-def product(tid, A, B, Prod):
-    Prod[tid] = A[tid] * B[tid]
-
-def sum(tid, A, B, Sum):
-    Sum[tid] = A[tid] + B[tid]
-
-cu = CU('gpu') # or CU('cpu')
-... # prepare data
-cu.enqueue(product, ntid=dProd.size,
-           args=(dA, dB, dProd))
-cu.enqueue(sum, 	ntid=dSum.size,
-           args=(dProd, dC, dSum))
-... # do something while waiting?
-cu.wait()
-
-cu.close() # destroy the compute unit
-```
-

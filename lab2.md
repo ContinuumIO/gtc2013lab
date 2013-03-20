@@ -39,7 +39,7 @@ d_noises = # fill in the RHS
 ## Enqueue kernels
 
 - `cu.enqueue(kernel, ntid=number_of_threads, args=(arg0, arg1))`
-    - `tid` (1st argument of the kernel) is not automatically populated
+    - `tid` (1st argument of the kernel) is automatically populated
 - Kernels run asynchronously
 
 ## Exercise 2

@@ -7,7 +7,7 @@ TARGET = labslides.pdf lab1.html lab1.pdf lab2.html lab2.pdf
 all: $(TARGET)
 
 labslides.pdf: labslides.md lab1.md cuapi.md lab2.md closing.md
-	$(MAKEPDF) -V fontsize:10pt -t beamer $+ -o $@
+	$(MAKEPDF) -V fontsize:10pt -V theme:Warsaw -t beamer $+ -o $@
 
 lab1.html: lab1.md
 	$(MAKEHTML) $+ -o $@

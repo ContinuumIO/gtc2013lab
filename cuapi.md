@@ -6,7 +6,7 @@
 
 # NumbaPro Compute Unit (CU) API
 
-- Parallel heterogeneous programming for GPU, CPU, ...
+- Heterogeneous parallel programming for GPU, CPU, ...
 - Execute kernels asynchronously
 
 # A Saxpy Example

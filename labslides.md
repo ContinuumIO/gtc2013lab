@@ -1,9 +1,8 @@
 % Using Python to Speed-up Applications with GPUs
+% Continuum Analytics
 % Travis Oliphant & Siu Kwan Lam
-% March 12, 2013
 
-
-# Schedule
+# Agenda
 
 * Introduction
     - Python
@@ -34,7 +33,7 @@ Cons
 
 * An opensource **JIT** compiler for **array-oriented programming** in CPython
 * Turn numerical loops into fast native code
-* Maximumize hardware utilization
+* Maximize hardware utilization
 * Just add a decorator to your compute intensive function
 
 # Mandelbrot in Numba

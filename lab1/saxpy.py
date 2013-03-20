@@ -5,8 +5,8 @@ import math
 from timeit import default_timer as time
 
 @cuda.autojit
-def saxpy(Out, X, Y, Z):
-    "Compute Out = X * Y + Z"
+def saxpy(Out, a, X, Y):
+    "Compute Out = a * X + Y"
     # ------ Exercise --------
     # Complete this kernel
     # threadIdx ---> cuda.threadIdx
@@ -19,14 +19,14 @@ def main():
     thread_per_block = 512
     block_per_grid = 10
     n = thread_per_block * block_per_grid
-    X = np.random.random(n)
-    Y = np.random.random(n)
-    Z = np.random.random(n)
+    a = 1.2345
+    X = np.random.random(n).astype(np.float32)
+    Y = np.random.random(n).astype(np.float32)
     Out = np.empty_like(X)
 
     # ------ Exercise --------
     # Host->Device
-    # Complete the transfer for Y, Z, and Out
+    # Complete the transfer for X, Y, and Out
 
     # Kernel launch
     blockdim = thread_per_block, 1, 1
@@ -46,7 +46,7 @@ def main():
     print('-- Result --')
     print(Out)
     # Verify
-    print("verify: %s" % np.allclose(X * Y + Z, Out))
+    print("verify: %s" % np.allclose(a * X + Y, Out))
 
 if __name__ == '__main__':
     main()
